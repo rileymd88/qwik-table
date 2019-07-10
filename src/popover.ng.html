@@ -1,0 +1,10 @@
+<lui-popover x-arrow="arrow" class="qsc-dropdown">
+	<lui-popover-body>
+		<ul class="lui-list">
+			<li ng-repeat="item in input.items" class="lui-list__item  lui-list__action"
+			 ng-click="input.onClick(item); $event.stopPropagation();">
+				<span class="lui-list__text">{{item.label}}</span>
+			</li>
+		</ul>
+	</lui-popover-body>
+</lui-popover>
