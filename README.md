@@ -1,5 +1,7 @@
 # Qwik Table
-A Qlik Sense extension which automatically creates a custom report using Qlik Sense standard objects.
+A Qlik Sense extension which automatically creates a custom report using Qlik Sense standard objects. This extension must be downloaded from the releases page found here: https://github.com/rileymd88/qwik-table/releases 
+
+![Qwik Table GIF](https://raw.githubusercontent.com/rileymd88/data/master/qwik-table/qwik-table.gif)
 
 # Developing the extension
 If you want to do code changes to the extension follow these simple steps to get going.
