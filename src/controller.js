@@ -7,8 +7,9 @@ import popoverTemplate from './popover.ng.html';
 
 export default ['$scope', '$element', function ($scope, $element) {
   $scope.layoutId = $scope.layout.qInfo.qId;
-  var enigma = $scope.component.model.enigmaModel;
-  var app = qlik.currApp($scope);
+  let enigma = $scope.component.model.enigmaModel;
+  let app = qlik.currApp($scope);
+
 
   $scope.layout.getScope = function () {
     return $scope;
@@ -20,6 +21,14 @@ export default ['$scope', '$element', function ($scope, $element) {
         $scope.onMasterVizSelected(newValue);
       }
     }
+  });
+
+  $scope.$watch("layout.prop.dimName", function (newValue, oldValue) {
+    $scope.dimName = newValue;
+  });
+
+  $scope.$watch("layout.prop.mesName", function (newValue, oldValue) {
+    $scope.mesName = newValue;
   });
 
   helper.getMasterItems().then(function (items) {
@@ -96,7 +105,14 @@ export default ['$scope', '$element', function ($scope, $element) {
         if (tableProps.qHyperCubeDef.qDimensions[d].qLibraryId.length > 1) {
           let masterDimension = await enigma.app.getDimension(tableProps.qHyperCubeDef.qDimensions[d].qLibraryId);
           let masterDimensionProps = await masterDimension.getLayout();
-          let label = masterDimensionProps.qDim.qFieldLabels[0].replaceAll(",", " ").replaceAll("[", " ").replaceAll("]", " ").replaceAll("(", " ").replaceAll(")", " ");
+          // Check for drilldown
+          let label;
+          try {
+            label = masterDimensionProps.qDim.title.replaceAll(",", " ").replaceAll("[", " ").replaceAll("]", " ").replaceAll("(", " ").replaceAll(")", " ");
+          }
+          catch {
+            label = masterDimensionProps.qDim.qFieldLabels[0].replaceAll(",", " ").replaceAll("[", " ").replaceAll("]", " ").replaceAll("(", " ").replaceAll(")", " ");
+          }
           dimensionLabels.push({ "label": label, "id": $scope.generateRandomId() });
         }
         // Not a master item
@@ -126,14 +142,15 @@ export default ['$scope', '$element', function ($scope, $element) {
           }
           // Has expression
           else {
-            //let expressionValue = await $scope.getExpression(masterMeasureProps.qMeasure.qLabelExpression);
+            let expressionValue = await $scope.getExpression(masterMeasureProps.qMeasure.qLabelExpression);
+            measureLabels.push(expressionValue);
           }
         }
         // Not a master item
         else {
           // Has label
           if (tableProps.qHyperCubeDef.qMeasures[m].qDef.qLabel.length > 1) {
-            let label = tableProps.qHyperCubeDef.qMeasures[m].qDef.qFieldLabels[0].replaceAll(",", " ").replaceAll("[", " ").replaceAll("]", " ").replaceAll("(", " ").replaceAll(")", " ");
+            let label = tableProps.qHyperCubeDef.qMeasures[m].qDef.qLabel.replaceAll(",", " ").replaceAll("[", " ").replaceAll("]", " ").replaceAll("(", " ").replaceAll(")", " ");
             measureLabels.push({ "label": label, "id": $scope.generateRandomId() });
           }
           // Expression
@@ -151,33 +168,34 @@ export default ['$scope', '$element', function ($scope, $element) {
       }
       // Add new data islands
       let loadScript = "///$tab Qwik Table\r\n";
-      loadScript += `Dimensions:\rLOAD * INLINE [\r`;
-      loadScript += `Dimensions, DimensionsID\r`;
+      loadScript += `[${$scope.dimName}]:\rLOAD * INLINE [\r`;
+      loadScript += `${$scope.dimName}, ${$scope.dimName}ID\r`;
       for (let dl = 0; dl < dimensionLabels.length; dl++) {
         loadScript += `${dimensionLabels[dl].label}, ${dimensionLabels[dl].id}\r`;
       }
-      loadScript += `]\r WHERE NOT EXISTS(Dimensions);`;
-      loadScript += `\rMeasures:\rLOAD * INLINE [\r`;
-      loadScript += `Measures, MeasuresID\r`;
+      loadScript += `]\r;`;
+      loadScript += `\r[${$scope.mesName}]:\rLOAD * INLINE [\r`;
+      loadScript += `${$scope.mesName}, ${$scope.mesName}ID\r`;
       for (let ml = 0; ml < measureLabels.length; ml++) {
         loadScript += `${measureLabels[ml].label}, ${measureLabels[ml].id}\r`;
       }
-      loadScript += `]\r WHERE NOT EXISTS(Measures);`;
+      loadScript += `]\r;`;
       let currentLoadScript = await enigma.app.getScript();
       loadScript = currentLoadScript + loadScript;
       await enigma.app.setScript(loadScript);
       deleteReload();
       await enigma.app.doReload();
+      await enigma.app.doSave();
       // Transform table props into new flexible table
       let newTableProps = JSON.parse(JSON.stringify(tableProps));
       for (let dc = 0; dc < newTableProps.qHyperCubeDef.qDimensions.length; dc++) {
-        newTableProps.qHyperCubeDef.qDimensions[dc].qCalcCondition.qCond.qv = `=SubStringCount(Concat([DimensionsID], '|'), '${dimensionLabels[dc].id}')`;
+        newTableProps.qHyperCubeDef.qDimensions[dc].qCalcCondition.qCond.qv = `=SubStringCount(Concat([${$scope.dimName}ID], '|'), '${dimensionLabels[dc].id}')`;
       }
       for (let mc = 0; mc < newTableProps.qHyperCubeDef.qMeasures.length; mc++) {
-        newTableProps.qHyperCubeDef.qMeasures[mc].qCalcCondition.qCond.qv = `=SubStringCount(Concat([MeasuresID], '|'), '${measureLabels[mc].id}')`;
+        newTableProps.qHyperCubeDef.qMeasures[mc].qCalcCondition.qCond.qv = `=SubStringCount(Concat([${$scope.mesName}ID], '|'), '${measureLabels[mc].id}')`;
       }
-      newTableProps.qHyperCubeDef.qCalcCond = `GetSelectedCount(Dimensions) > 0 and GetSelectedCount(Measures) > 0`;
-      newTableProps.qHyperCubeDef.qCalcCondition.qCond.qv = `GetSelectedCount(Dimensions) > 0 and GetSelectedCount(Measures) > 0`;
+      newTableProps.qHyperCubeDef.qCalcCond = `GetSelectedCount([${$scope.dimName}]) > 0 and GetSelectedCount([${$scope.mesName}]) > 0`;
+      newTableProps.qHyperCubeDef.qCalcCondition.qCond.qv = `GetSelectedCount([${$scope.dimName}]) > 0 and GetSelectedCount([${$scope.mesName}]) > 0`;
       newTableProps.qHyperCubeDef.qCalcCondition.qMsg.qv = "Please select your dimensions and measures";
       newTableProps.qInfo.qId = $scope.layoutId;
       newTableProps.qInfo.qType = 'table';
@@ -186,10 +204,12 @@ export default ['$scope', '$element', function ($scope, $element) {
       thisObject.setProperties(newTableProps);
       let sheetId = qlik.navigation.getCurrentSheetId().sheetId;
       let sheetObject = await enigma.app.getObject(sheetId);
+      let dimName = $scope.dimName;
+      let mesName = $scope.mesName;
       let dimensionListbox = await app.visualization.create('listbox', null, {
         qListObjectDef: {
           qDef: {
-            qFieldDefs: ['Dimensions']
+            qFieldDefs: [dimName]
           }
         }
       });
@@ -197,10 +217,11 @@ export default ['$scope', '$element', function ($scope, $element) {
       let measureListbox = await app.visualization.create('listbox', null, {
         qListObjectDef: {
           qDef: {
-            qFieldDefs: ['Measures']
+            qFieldDefs: [mesName]
           }
         }
       });
+      
       let measureListboxId = measureListbox.id;
       let filterProps = {
         "qInfo": {
@@ -262,10 +283,10 @@ export default ['$scope', '$element', function ($scope, $element) {
                   "qDef": {
                     "qGrouping": "N",
                     "qFieldDefs": [
-                      "Dimensions"
+                      `${dimName}`
                     ],
                     "qFieldLabels": [
-                      "Dimensions"
+                      `${dimName}`
                     ],
                     "qSortCriterias": [
                       {
@@ -296,7 +317,7 @@ export default ['$scope', '$element', function ($scope, $element) {
                   "qOtherTotalSpec": {}
                 },
                 "showTitles": true,
-                "title": "Dimensions",
+                "title": dimName,
                 "subtitle": "",
                 "footnote": "",
                 "showDetails": false,
@@ -320,10 +341,10 @@ export default ['$scope', '$element', function ($scope, $element) {
                   "qDef": {
                     "qGrouping": "N",
                     "qFieldDefs": [
-                      "Measures"
+                      `${mesName}`
                     ],
                     "qFieldLabels": [
-                      "Measures"
+                      `${mesName}`
                     ],
                     "qSortCriterias": [
                       {
@@ -354,7 +375,7 @@ export default ['$scope', '$element', function ($scope, $element) {
                   "qOtherTotalSpec": {}
                 },
                 "showTitles": true,
-                "title": "Measures",
+                "title":  mesName,
                 "subtitle": "",
                 "footnote": "",
                 "showDetails": false,
@@ -392,15 +413,13 @@ export default ['$scope', '$element', function ($scope, $element) {
         "name": filterId,
         "row": row,
         "rowspan": rowspan,
-        "type": "filter"
+        "type": "filterpane"
       };
-      console.log(sheetProps.cells);
-      console.log(newFilterCell);
       sheetProps.cells.push(newFilterCell);
       await sheetObject.setProperties(sheetProps);
     }
     catch (err) {
-      return err;
+      console.log(err);
     }
   };
 
@@ -415,7 +434,7 @@ export default ['$scope', '$element', function ($scope, $element) {
     return (str.replace(searchStr, replaceStr)).replaceAll(searchStr, replaceStr);
   };
   function deleteReload() {
-    if ($(".ui-dialog-container") != null) {
+    if (document.querySelector(".ui-dialog-container") != null) {
       $(".ui-dialog-container").remove();
       return "OK";
     }

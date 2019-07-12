@@ -10,7 +10,7 @@ export default {
   template: template,
   definition: definition,
   controller: controller,
-  paint: function () {
+  paint: function (element, layout) {
     const app = qlik.currApp(this);
     const scope = this.$scope;
     this.$scope.isInEdit = this.options.interactionState == 2;

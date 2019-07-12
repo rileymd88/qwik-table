@@ -9,6 +9,22 @@ define(['./helper'], function (helper) {
     }
   };
 
+  var dimName = {
+    ref: "prop.dimName",
+    label: "Name of field for Dimensions",
+    type: "string",
+    expression: "optional",
+    defaultValue: "Dimensions"
+  };
+
+  var mesName = {
+    ref: "prop.mesName",
+    label: "Name of field for Measures",
+    type: "string",
+    expression: "optional",
+    defaultValue: "Measures"
+  };
+
   var appearance = {
     uses: "settings",
     items: {
@@ -26,7 +42,9 @@ define(['./helper'], function (helper) {
         type: "items",
         label: "Qwik table options",
         items: {
-          link: link
+          link: link,
+          dimName: dimName,
+          mesName: mesName
         }
       }
     }
