@@ -11,6 +11,9 @@ If you want to do code changes to the extension follow these simple steps to get
 3. Run `npm install`
 4. Run `npm run build` - to build a dev-version to the /dist folder.
 
+## Release Notes v0.3
+* Added automatic table creation based off master dimensions and measures (no need to first create a master item table)
+
 ## Release Notes v0.2
 * Automatic creation of filterpane
 * Added properties which allow to choose a name for the dimension and measure data island fields that get created
