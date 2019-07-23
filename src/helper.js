@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 define(["qlik"], function (qlik) {
   return {
     getMasterItems: function () {
@@ -6,7 +7,6 @@ define(["qlik"], function (qlik) {
         app.getList('masterobject').then(function (model) {
           // Close the model to prevent any updates.
           app.destroySessionObject(model.layout.qInfo.qId);
-
           // This is a bit iffy, might be smarter to reject and handle empty lists on the
           // props instead.
           let supportedMasterItems = model.layout.qAppObjectList.qItems.filter(function (item) {
@@ -32,5 +32,7 @@ define(["qlik"], function (qlik) {
         });
       });
     }
+
+
   };
 });

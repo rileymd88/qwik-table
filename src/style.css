@@ -16,4 +16,5 @@
 #qtOverlay .add-button {
   height: 32px;
   width: 250px;
+  margin: 4px;
 }

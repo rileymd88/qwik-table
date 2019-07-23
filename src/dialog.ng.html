@@ -1,0 +1,40 @@
+<lui-dialog style="width: 80%; height: 80%;">
+	<lui-dialog-header>
+		<lui-dialog-title>Select your dimensions and measures</lui-dialog-title>
+	</lui-dialog-header>
+	<lui-dialog-body>
+		<ul class="lui-list">
+			<li class="lui-list__header">
+				<span class="lui-list__text">Dimensions</span>
+			</li>
+			<li ng-repeat="dim in input.dimensions" class="lui-list__item">
+				<label class="lui-checkbox">
+					<input class="lui-checkbox__input" type="checkbox" aria-label="{{mes.qMeta.title}}" data-qid="{{dim.qInfo.qId}}" data-title="{{mes.qMeta.title}}" data-type="dim" />
+					<div class="lui-checkbox__check-wrap">
+						<span class="lui-checkbox__check" ></span>
+						<span class="lui-list__text">{{dim.qMeta.title}}</span>
+					</div>
+				</label>
+			</li>
+		</ul>
+		<ul class="lui-list">
+			<li class="lui-list__header">
+				<input class="lui-checkbox__input" type="checkbox" />
+				<span class="lui-list__text">Measures</span>
+			</li>
+			<li ng-repeat="mes in input.measures" class="lui-list__item">
+				<label class="lui-checkbox">
+					<input class="lui-checkbox__input" type="checkbox" aria-label="{{mes.qMeta.title}}" data-qid="{{mes.qInfo.qId}}" data-title="{{mes.qMeta.title}}" data-type="mes"  />
+					<div class="lui-checkbox__check-wrap">
+						<span class="lui-checkbox__check" ></span>
+						<span class="lui-list__text" >{{mes.qMeta.title}}</span>
+					</div>
+				</label>
+			</li>
+		</ul>
+	</lui-dialog-body>
+	<lui-dialog-footer>
+			<button class="lui-button  lui-dialog__footer-button" ng-click="close();">Close</button>
+		<button class="lui-button lui-button--success lui-dialog__footer-button" ng-click="input.createTable()">Create Table</button>
+	</lui-dialog-footer>
+</lui-dialog>

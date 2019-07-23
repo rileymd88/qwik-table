@@ -4,6 +4,14 @@ var qlik = window.require('qlik');
 import $ from 'jquery';
 import helper from './helper.js';
 import popoverTemplate from './popover.ng.html';
+import dialogTemplate from './dialog.ng.html';
+/* var prefix = window.location.pathname.substr(0, window.location.pathname.toLowerCase().lastIndexOf("/sense") + 1);
+var config = {
+  host: window.location.hostname,
+  prefix: prefix,
+  port: window.location.port,
+  isSecure: window.location.protocol === "https:"
+}; */
 
 export default ['$scope', '$element', function ($scope, $element) {
   $scope.layoutId = $scope.layout.qInfo.qId;
@@ -61,6 +69,99 @@ export default ['$scope', '$element', function ($scope, $element) {
       $(window).off('resize.popover', $scope.onMasterItemPopoverResize);
     });
     $(window).on('resize.popover', $scope.onMasterItemPopoverResize);
+  };
+
+  $scope.showMakeTableDialog = async function (event) {
+    //let sessionApp = qlik.sessionApp(config);
+    $scope.measures = await $scope.getMeasures();
+    $scope.dimensions = await $scope.getDimensions();
+    console.log($scope.dimensions);
+    $scope.createTable = window.qvangularGlobal.getService("luiDialog").show({
+      template: dialogTemplate,
+      closeOnEscape: true,
+      input: {
+        dimensions: $scope.dimensions,
+        measures: $scope.measures,
+        createTable: async function () {
+          try {
+            let checkedItems = document.querySelectorAll(".lui-checkbox .lui-checkbox__input:checked");
+            /* let checkedDimensions = [];
+            let checkedMeasures = []; */
+            let columns = [];
+            for (let i = 0; i < checkedItems.length; i++) {
+              let type = checkedItems[i].getAttribute('data-type');
+              let qId = checkedItems[i].getAttribute('data-qid');
+              if (type == 'dim') {
+                columns.push({ "qLibraryId": qId, "qType": "dimension" });
+              }
+              else {
+                columns.push({ "qLibraryId": qId, "qType": "measure" });
+              }
+            }
+            let table = await app.visualization.create('table', columns, {});
+            let tableId = table.model.id;
+            $scope.onMasterVizSelected(tableId);
+          }
+          finally {
+            $scope.createTable.close();
+          }
+        }
+      }
+    });
+  };
+
+  $scope.getMeasures = function () {
+    return new Promise(async function (resolve, reject) {
+      try {
+        let params = {
+          "qProp": {
+            "qInfo": {
+              "qType": "MeasureList"
+            },
+            "qMeasureListDef": {
+              "qType": "measure",
+              "qData": {
+                "title": "/title",
+                "tags": "/tags"
+              }
+            }
+          }
+        };
+        let measureObjects = await enigma.app.createSessionObject(params);
+        let measuresLayout = await measureObjects.getLayout();
+        resolve(measuresLayout.qMeasureList.qItems);
+      }
+      catch (err) {
+        reject(err);
+      }
+    });
+  };
+
+  $scope.getDimensions = function () {
+    return new Promise(async function (resolve, reject) {
+      try {
+        let params = {
+          "qProp": {
+            "qInfo": {
+              "qType": "DimensionList"
+            },
+            "qDimensionListDef": {
+              "qType": "dimension",
+              "qData": {
+                "title": "/title",
+                "tags": "/tags"
+              }
+            }
+          }
+        };
+        let dimensionObjects = await enigma.app.createSessionObject(params);
+        let dimensionsLayout = await dimensionObjects.getLayout();
+        resolve(dimensionsLayout.qDimensionList.qItems);
+      }
+      catch (err) {
+        reject(err);
+      }
+    });
   };
 
   $scope.onMasterItemPopoverResize = function () {
@@ -202,6 +303,7 @@ export default ['$scope', '$element', function ($scope, $element) {
       newTableProps.qMetaDef = {};
       let thisObject = await enigma.app.getObject($scope.layoutId);
       thisObject.setProperties(newTableProps);
+      // Create filer pane
       let sheetId = qlik.navigation.getCurrentSheetId().sheetId;
       let sheetObject = await enigma.app.getObject(sheetId);
       let dimName = $scope.dimName;
@@ -221,7 +323,7 @@ export default ['$scope', '$element', function ($scope, $element) {
           }
         }
       });
-      
+
       let measureListboxId = measureListbox.id;
       let filterProps = {
         "qInfo": {
@@ -375,7 +477,7 @@ export default ['$scope', '$element', function ($scope, $element) {
                   "qOtherTotalSpec": {}
                 },
                 "showTitles": true,
-                "title":  mesName,
+                "title": mesName,
                 "subtitle": "",
                 "footnote": "",
                 "showDetails": false,
