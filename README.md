@@ -11,6 +11,9 @@ If you want to do code changes to the extension follow these simple steps to get
 3. Run `npm install`
 4. Run `npm run build` - to build a dev-version to the /dist folder.
 
+## Release Notes v0.4
+* Simplifed automatic table creation by allowing usage of fields, formulas and master items in once interface
+
 ## Release Notes v0.3
 * Added automatic table creation based off master dimensions and measures (no need to first create a master item table)
 
