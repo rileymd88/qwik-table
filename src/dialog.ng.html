@@ -3,38 +3,61 @@
 		<lui-dialog-title>Select your dimensions and measures</lui-dialog-title>
 	</lui-dialog-header>
 	<lui-dialog-body>
+		<div class="qwikTableGenericContainer">
+			<span class="lui-icon  lui-icon--search qwikTableSearchIcon" aria-hidden="false"></span>
+			<input class="lui-input qwikTableSearch" ng-model="input.searchTxt" ng-change="test(searchTxt)"
+				placeholder="Search your fields and master items" />
+		</div>
+		<label ng-show="input.searchTxt == '' || input.searchTxt.length < 1" class="lui-checkbox qwikTableLabel">
+			<input class="lui-checkbox__input" type="checkbox" ng-model="selectAll" ng-click="input.checkAll(selectAll)"
+				aria-label="Label" />
+			<div class="lui-checkbox__check-wrap">
+				<span class="lui-checkbox__check"></span>
+				<span class="lui-checkbox__check-text">Select All</span>
+			</div>
+		</label>
 		<ul class="lui-list">
-			<li class="lui-list__header">
-				<span class="lui-list__text">Dimensions</span>
-			</li>
-			<li ng-repeat="dim in input.dimensions" class="lui-list__item">
-				<label class="lui-checkbox">
-					<input class="lui-checkbox__input" type="checkbox" aria-label="{{mes.qMeta.title}}" data-qid="{{dim.qInfo.qId}}" data-title="{{mes.qMeta.title}}" data-type="dim" />
+			<div ng-repeat="item in input.masterList | filter:input.searchTxt"
+				class="lui-list__item qwikTableContainer">
+				<label class="lui-checkbox qwikTableLabel">
+					<input class="lui-checkbox__input" type="checkbox"
+						ng-model="item.checked" aria-label="Label" />
 					<div class="lui-checkbox__check-wrap">
-						<span class="lui-checkbox__check" ></span>
-						<span class="lui-list__text">{{dim.qMeta.title}}</span>
+						<div class="qwikTableGenericContainer">
+							<span class="lui-checkbox__check qwikTableCheckbox"></span>
+							<input ng-disabled="item.type !='field'" id="label{{item.id}}" ng-model="item.label" data-value="{{item.name}}" class="lui-input qwikTableLabel"></input>
+						</div>
 					</div>
 				</label>
-			</li>
-		</ul>
-		<ul class="lui-list">
-			<li class="lui-list__header">
-				<input class="lui-checkbox__input" type="checkbox" />
-				<span class="lui-list__text">Measures</span>
-			</li>
-			<li ng-repeat="mes in input.measures" class="lui-list__item">
-				<label class="lui-checkbox">
-					<input class="lui-checkbox__input" type="checkbox" aria-label="{{mes.qMeta.title}}" data-qid="{{mes.qInfo.qId}}" data-title="{{mes.qMeta.title}}" data-type="mes"  />
-					<div class="lui-checkbox__check-wrap">
-						<span class="lui-checkbox__check" ></span>
-						<span class="lui-list__text" >{{mes.qMeta.title}}</span>
+				<select ng-show="item.type == 'field'" id="select{{item.id}}"
+					ng-change="input.fieldChanged('{{item.id}}', operator)" ng-model="operator" class="lui-select"
+					ng-options="template.value as template.name for template in input.operators">
+				</select>
+				<span ng-show="item.type != 'field'" class="lui-icon  lui-icon--link"></span>
+				<span ng-show="item.type != 'field'">&nbsp; {{item.type}}</span>
+				<div ng-show="item.type == 'field'" class="pp-component pp-string-component" tcl="string">
+					<div class="value">
+						<div class="lui-input-group">
+							<input id="input{{item.id}}"
+								class="lui-input lui-input-group__item lui-input-group__input ng-pristine ng-untouched ng-valid ng-empty ng-valid-maxlength"
+								expression-type="measure" ng-model="item.formula" class="is-expression"
+								ng-change="change()" qva-model-onkeyup="" tid="field" aria-invalid="false">
+							<button
+								class="lui-button  lui-input-group__item  lui-input-group__button qwikTableFormulaButton"
+								pp-expression-editor="item.formula" pp-expression-editor-on-apply="item.formula = value"
+								expression-type="measure" q-title-translation="Tooltip.OpenExpressionEditor"
+								title="Open Expression editor" ng-click="input.onFormulaButtonClicked(item.id)">
+								<span class="lui-button__icon  lui-icon  lui-icon--expression edit-expression"></span>
+							</button>
+						</div>
 					</div>
-				</label>
-			</li>
+				</div>
+			</div>
 		</ul>
 	</lui-dialog-body>
 	<lui-dialog-footer>
-			<button class="lui-button  lui-dialog__footer-button" ng-click="close();">Close</button>
-		<button class="lui-button lui-button--success lui-dialog__footer-button" ng-click="input.createTable()">Create Table</button>
+		<button class="lui-button  lui-dialog__footer-button" ng-click="close();">Close</button>
+		<button class="lui-button lui-button--success lui-dialog__footer-button" ng-click="input.createTable()">Create
+			Table</button>
 	</lui-dialog-footer>
 </lui-dialog>

@@ -72,32 +72,100 @@ export default ['$scope', '$element', function ($scope, $element) {
   };
 
   $scope.showMakeTableDialog = async function (event) {
-    //let sessionApp = qlik.sessionApp(config);
+    let fieldDefinitions = [];
     $scope.measures = await $scope.getMeasures();
     $scope.dimensions = await $scope.getDimensions();
-    console.log($scope.dimensions);
+    $scope.fields = await $scope.getFields();
+    $scope.masterList = $scope.measures.concat($scope.dimensions).concat($scope.fields).sort(compare);
+    $scope.operators = [
+      { "name": "Dimension", "value": "Dim" },
+      { "name": "Sum", "value": "Sum(" },
+      { "name": "Count", "value": "Count(" },
+      { "name": "Avg", "value": "Avg(" },
+      { "name": "Min", "value": "Min(" },
+      { "name": "Max", "value": "Max(" }
+    ];
     $scope.createTable = window.qvangularGlobal.getService("luiDialog").show({
       template: dialogTemplate,
       closeOnEscape: true,
       input: {
-        dimensions: $scope.dimensions,
-        measures: $scope.measures,
+        masterList: $scope.masterList,
+        operators: $scope.operators,
+        operator: $scope.operators[0].value,
+        searchTxt: '',
+        onFormulaButtonClicked: function (id) {
+          waitForElementToDisplay(100, this, id);
+        },
+        checkAll: function (selectAll) {
+          angular.forEach(this.masterList, function (item) {
+            if (selectAll) {
+              item.checked = false;
+            }
+            else {
+              item.checked = true;
+            }
+          });
+        },
+        fieldChanged: async function (id, op) {
+          let label = $(`#label${id}`)[0].getAttribute("data-value");
+          let fieldDef;
+          if (op == "Dim") {
+            fieldDef = { "id": id, "label": label, "formula": `[${label}]`, "type": "dim" };
+          }
+          else {
+            fieldDef = { "id": id, "label": label, "formula": `${op}[${label}])`, "type": "mes" };
+          }
+          const index = fieldDefinitions.findIndex((e) => e.id === id);
+          if (index === -1) {
+            fieldDefinitions.push(fieldDef);
+          } else {
+            fieldDefinitions[index] = fieldDef;
+          }
+          for (let i = 0; i < this.masterList.length; i++) {
+            if (this.masterList[i].id == id) {
+              this.masterList[i].formula = fieldDef.formula;
+              this.masterList[i].op = op;
+              break;
+            }
+          }
+        },
         createTable: async function () {
           try {
-            let checkedItems = document.querySelectorAll(".lui-checkbox .lui-checkbox__input:checked");
-            /* let checkedDimensions = [];
-            let checkedMeasures = []; */
             let columns = [];
-            for (let i = 0; i < checkedItems.length; i++) {
-              let type = checkedItems[i].getAttribute('data-type');
-              let qId = checkedItems[i].getAttribute('data-qid');
-              if (type == 'dim') {
-                columns.push({ "qLibraryId": qId, "qType": "dimension" });
+            let masterList = this.masterList.filter(function(item){
+              return item.checked == true;
+            });
+            for(let i=0;i<masterList.length;i++) {
+              if(masterList[i].type == 'Master Item Dimension') {
+                columns.push({ "qLibraryId": masterList[i].id, "qType": "dimension" });
               }
-              else {
-                columns.push({ "qLibraryId": qId, "qType": "measure" });
+              if(masterList[i].type == 'Master Item Measure') {
+                columns.push({ "qLibraryId": masterList[i].id, "qType": "measure" });
+              }
+              if(masterList[i].type == 'field') {
+                if(masterList[i].op == 'Dim') {
+                  columns.push({
+                    "qDef": {
+                      "qFieldDefs": [
+                        masterList[i].formula
+                      ],
+                      "qFieldLabels": [
+                        masterList[i].label
+                      ],
+                    }
+                  });
+                }
+                else {
+                  columns.push({
+                    "qDef": {
+                      "qLabel": masterList[i].label,
+                      "qDef": masterList[i].formula
+                    }
+                  });
+                }
               }
             }
+
             let table = await app.visualization.create('table', columns, {});
             let tableId = table.model.id;
             $scope.onMasterVizSelected(tableId);
@@ -129,7 +197,9 @@ export default ['$scope', '$element', function ($scope, $element) {
         };
         let measureObjects = await enigma.app.createSessionObject(params);
         let measuresLayout = await measureObjects.getLayout();
-        resolve(measuresLayout.qMeasureList.qItems);
+        return resolve(measuresLayout.qMeasureList.qItems.map(function (item) {
+          return { "id": item.qInfo.qId, "name": item.qMeta.title, "type": "Master Item Measure", "formula": "", "label": item.qMeta.title, "op": "" };
+        }));
       }
       catch (err) {
         reject(err);
@@ -156,7 +226,24 @@ export default ['$scope', '$element', function ($scope, $element) {
         };
         let dimensionObjects = await enigma.app.createSessionObject(params);
         let dimensionsLayout = await dimensionObjects.getLayout();
-        resolve(dimensionsLayout.qDimensionList.qItems);
+        return resolve(dimensionsLayout.qDimensionList.qItems.map(function (item) {
+          return { "id": item.qInfo.qId, "name": item.qMeta.title, "type": "Master Item Dimension", "formula": "", "label": item.qMeta.title, "op": "" };
+        }));
+      }
+      catch (err) {
+        reject(err);
+      }
+    });
+  };
+
+  $scope.getFields = function () {
+    return new Promise(function (resolve, reject) {
+      try {
+        app.getList("FieldList", function (model) {
+          return resolve(model.qFieldList.qItems.map(function (item, i) {
+            return { "id": i, "name": item.qName, "type": "field", "formula": `[${item.qName}]`, "label": item.qName, "op": "Dim" };
+          }));
+        });
       }
       catch (err) {
         reject(err);
@@ -284,7 +371,6 @@ export default ['$scope', '$element', function ($scope, $element) {
       let currentLoadScript = await enigma.app.getScript();
       loadScript = currentLoadScript + loadScript;
       await enigma.app.setScript(loadScript);
-      deleteReload();
       await enigma.app.doReload();
       await enigma.app.doSave();
       // Transform table props into new flexible table
@@ -521,7 +607,7 @@ export default ['$scope', '$element', function ($scope, $element) {
       await sheetObject.setProperties(sheetProps);
     }
     catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
@@ -535,15 +621,43 @@ export default ['$scope', '$element', function ($scope, $element) {
     // replace and remove first match, and do another recursirve search/replace
     return (str.replace(searchStr, replaceStr)).replaceAll(searchStr, replaceStr);
   };
-  function deleteReload() {
-    if (document.querySelector(".ui-dialog-container") != null) {
-      $(".ui-dialog-container").remove();
-      return "OK";
+
+  // This could probably be done in a smarter way then this :)
+  function waitForElementToDisplay(time, that, id) {
+    if (document.querySelector('.lui-button.confirm.button') != null) {
+      $(".lui-button.confirm.button").on('click.qwikTable', function(){
+        let formula = $(".CodeMirror-line")[0].innerText; 
+        try {
+          $(".lui-button.confirm.button").unbind('click.qwikTable');
+          for (let i = 0; i < that.masterList.length; i++) {
+            if (that.masterList[i].id == id) {
+              that.masterList[i].formula = formula;
+              break;
+            }
+          }
+          return formula;
+        }
+        catch(err) {
+          formula = '';
+        }
+      });
     }
     else {
       setTimeout(function () {
-        deleteReload();
-      }, 100);
+        waitForElementToDisplay(time);
+      }, time);
     }
+  }
+  function compare(a, b) {
+    // Use toUpperCase() to ignore character casing
+    const genreA = a.name.toUpperCase();
+    const genreB = b.name.toUpperCase();
+    let comparison = 0;
+    if (genreA > genreB) {
+      comparison = 1;
+    } else if (genreA < genreB) {
+      comparison = -1;
+    }
+    return comparison;
   }
 }];

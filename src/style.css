@@ -1,12 +1,16 @@
 #qtOverlay {
-  position: absolute; /* Sit on top of the page content */
-  width: 100%; /* Full width (cover the whole page) */
-  height: 100%; /* Full height (cover the whole page) */
-  top: 0; 
+  position: absolute;
+  /* Sit on top of the page content */
+  width: 100%;
+  /* Full width (cover the whole page) */
+  height: 100%;
+  /* Full height (cover the whole page) */
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1000; /* Specify a stack order in case you're using a different order for other elements */
+  z-index: 1000;
+  /* Specify a stack order in case you're using a different order for other elements */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -17,4 +21,40 @@
   height: 32px;
   width: 250px;
   margin: 4px;
+}
+
+.qwikTableGenericContainer {
+  display: flex;
+  margin-bottom: 2%;
+}
+
+.lui-icon.lui-icon--search.qwikTableSearchIcon {
+  margin-right: 1%;
+  margin-left: 0.2%;
+}
+.lui-input.qwikTableSearch {
+  width: 25%;
+}
+
+.qwikTableCheckboxContainer {
+  display: flex;
+  margin-bottom: 2%;
+}
+
+.lui-list__item.qwikTableContainer {
+  display: flex;
+  align-items: baseline;
+}
+
+.lui-input.qwikTableLabel {
+  margin-left: 4%;
+  margin-right: 4%;
+}
+
+.lui-list__item.qwikTableContainer>.pp-component.pp-string-component {
+  flex-basis: 40%;
+}
+
+.lui-list__item.qwikTableContainer>.lui-select {
+  flex-basis: 15%;
 }
