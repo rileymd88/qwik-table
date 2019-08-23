@@ -11,6 +11,9 @@ If you want to do code changes to the extension follow these simple steps to get
 3. Run `npm install`
 4. Run `npm run build` - to build a dev-version to the /dist folder.
 
+## Release Notes v0.4.1
+* Updated node packages
+
 ## Release Notes v0.4
 * Simplifed automatic table creation by allowing usage of fields, formulas and master items in one interface
 
