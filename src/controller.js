@@ -376,13 +376,13 @@ export default ['$scope', '$element', function ($scope, $element) {
       // Transform table props into new flexible table
       let newTableProps = JSON.parse(JSON.stringify(tableProps));
       for (let dc = 0; dc < newTableProps.qHyperCubeDef.qDimensions.length; dc++) {
-        newTableProps.qHyperCubeDef.qDimensions[dc].qCalcCondition.qCond.qv = `=SubStringCount(Concat([${$scope.dimName}ID], '|'), '${dimensionLabels[dc].id}')`;
+        newTableProps.qHyperCubeDef.qDimensions[dc].qCalcCondition.qCond.qv = `=SubStringCount(Concat([${$scope.dimName}ID], '|'), '${dimensionLabels[dc].id}') and GetSelectedCount([${$scope.dimName}]) > 0`;
       }
       for (let mc = 0; mc < newTableProps.qHyperCubeDef.qMeasures.length; mc++) {
-        newTableProps.qHyperCubeDef.qMeasures[mc].qCalcCondition.qCond.qv = `=SubStringCount(Concat([${$scope.mesName}ID], '|'), '${measureLabels[mc].id}')`;
+        newTableProps.qHyperCubeDef.qMeasures[mc].qCalcCondition.qCond.qv = `=SubStringCount(Concat([${$scope.mesName}ID], '|'), '${measureLabels[mc].id}') and GetSelectedCount([${$scope.mesName}]) > 0`;
       }
-      newTableProps.qHyperCubeDef.qCalcCond = `GetSelectedCount([${$scope.dimName}]) > 0 and GetSelectedCount([${$scope.mesName}]) > 0`;
-      newTableProps.qHyperCubeDef.qCalcCondition.qCond.qv = `GetSelectedCount([${$scope.dimName}]) > 0 and GetSelectedCount([${$scope.mesName}]) > 0`;
+      newTableProps.qHyperCubeDef.qCalcCond = `GetSelectedCount([${$scope.dimName}]) > 0 or GetSelectedCount([${$scope.mesName}]) > 0`;
+      newTableProps.qHyperCubeDef.qCalcCondition.qCond.qv = `GetSelectedCount([${$scope.dimName}]) > 0 or GetSelectedCount([${$scope.mesName}]) > 0`;
       newTableProps.qHyperCubeDef.qCalcCondition.qMsg.qv = "Please select your dimensions and measures";
       newTableProps.qInfo.qId = $scope.layoutId;
       newTableProps.qInfo.qType = 'table';

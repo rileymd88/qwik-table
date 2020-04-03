@@ -1,7 +1,7 @@
 {
   "name": "qwik-table",
-  "version": "0.0.1",
-  "description": "An easy way to create a standard customised table in Qlik Sense",
+  "version": "0.5",
+  "description": "An easy way to create a standard customized table in Qlik Sense",
   "homepage": "https://github.com/rileymd88/qwik-table",
   "repository": "https://github.com/rileymd88/qwik-table",
   "author": "Riley MacDonald",
